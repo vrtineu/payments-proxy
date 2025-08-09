@@ -9,7 +9,6 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/vrtineu/payments-proxy/internal/payments"
-	"github.com/vrtineu/payments-proxy/internal/payments/entities"
 )
 
 type PaymentWorker struct {
@@ -133,7 +132,7 @@ func (pw *PaymentWorker) processMessage(ctx context.Context, msg redis.XMessage)
 		return
 	}
 
-	payment := entities.NewPayment(correlationID, amount, gateway.gatewayType)
+	payment := payments.NewPayment(correlationID, amount, gateway.gatewayType)
 
 	if err := gateway.ProcessPayment(ctx, payment); err != nil {
 		return

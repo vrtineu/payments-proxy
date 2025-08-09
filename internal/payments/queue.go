@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/vrtineu/payments-proxy/internal/payments/entities"
 )
 
 const (
@@ -38,7 +37,7 @@ func (q *PaymentsQueue) SetupPaymentsQueue(ctx context.Context) error {
 	return nil
 }
 
-func (q *PaymentsQueue) Enqueue(ctx context.Context, payment entities.Payment) error {
+func (q *PaymentsQueue) Enqueue(ctx context.Context, payment Payment) error {
 	err := q.rdb.XAdd(ctx, &redis.XAddArgs{
 		Stream: PaymentsStream,
 		Values: map[string]any{

@@ -3,8 +3,6 @@ package payments
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/vrtineu/payments-proxy/internal/payments/entities"
 )
 
 type PaymentHandlers struct {
@@ -23,7 +21,7 @@ func (h *PaymentHandlers) CreatePaymentHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var payment entities.Payment
+	var payment Payment
 	if err := json.NewDecoder(r.Body).Decode(&payment); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return

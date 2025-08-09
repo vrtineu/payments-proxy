@@ -6,7 +6,6 @@ import (
 
 	"github.com/vrtineu/payments-proxy/internal/infra/redis"
 	"github.com/vrtineu/payments-proxy/internal/payments"
-	"github.com/vrtineu/payments-proxy/internal/payments/entities"
 	"github.com/vrtineu/payments-proxy/internal/payments/processor"
 )
 
@@ -16,8 +15,8 @@ func main() {
 
 	redisClient := redis.NewRedisClient()
 
-	defaultGateway := processor.NewPaymentGateway("http://localhost:8001", entities.Default)
-	fallbackGateway := processor.NewPaymentGateway("http://localhost:8002", entities.Fallback)
+	defaultGateway := processor.NewPaymentGateway("http://localhost:8001", payments.Default)
+	fallbackGateway := processor.NewPaymentGateway("http://localhost:8002", payments.Fallback)
 
 	healthChecker := processor.NewHealthChecker(redisClient.Client, defaultGateway, fallbackGateway)
 	healthChecker.StartHealthMonitor(ctx)

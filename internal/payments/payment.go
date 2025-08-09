@@ -1,4 +1,4 @@
-package entities
+package payments
 
 import (
 	"time"

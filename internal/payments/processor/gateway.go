@@ -10,12 +10,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/vrtineu/payments-proxy/internal/payments/entities"
+	"github.com/vrtineu/payments-proxy/internal/payments"
 )
 
 type PaymentGateway struct {
 	url         string
-	gatewayType entities.GatewayType
+	gatewayType payments.GatewayType
 	client      *http.Client
 }
 
@@ -25,7 +25,7 @@ const (
 	ServiceUnavailableResponse = `{"failing":true,"minResponseTime":0}`
 )
 
-func NewPaymentGateway(url string, gatewayType entities.GatewayType) *PaymentGateway {
+func NewPaymentGateway(url string, gatewayType payments.GatewayType) *PaymentGateway {
 	return &PaymentGateway{
 		url:         url,
 		gatewayType: gatewayType,
@@ -67,7 +67,7 @@ func (pg *PaymentGateway) HealthCheck(ctx context.Context) ([]byte, error) {
 	return body, nil
 }
 
-func (pg *PaymentGateway) ProcessPayment(ctx context.Context, payment *entities.Payment) error {
+func (pg *PaymentGateway) ProcessPayment(ctx context.Context, payment *payments.Payment) error {
 	// Requisita o processamento de um pagamento.
 	// POST /payments
 	// {
