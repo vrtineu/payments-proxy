@@ -3,6 +3,7 @@ package payments
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/vrtineu/payments-proxy/internal/payments/entities"
@@ -70,4 +71,28 @@ func (q *PaymentsQueue) Dequeue(ctx context.Context, instanceID string) ([]redis
 
 	stream := streams[0]
 	return stream.Messages, nil
+}
+
+func (q *PaymentsQueue) AckMessage(ctx context.Context, id string) error {
+	return q.rdb.XAck(ctx, PaymentsStream, GroupName, id).Err()
+}
+
+func (q *PaymentsQueue) DeleteMessage(ctx context.Context, id string) error {
+	return q.rdb.XDel(ctx, PaymentsStream, id).Err()
+}
+
+func (q *PaymentsQueue) AutoClaimPending(ctx context.Context, consumer string, minIdle time.Duration, start string, count int64) ([]redis.XMessage, string, error) {
+	res := q.rdb.XAutoClaim(ctx, &redis.XAutoClaimArgs{
+		Stream:   PaymentsStream,
+		Group:    GroupName,
+		Consumer: consumer,
+		MinIdle:  minIdle,
+		Start:    start,
+		Count:    count,
+	})
+	if res.Err() != nil {
+		return nil, start, res.Err()
+	}
+	messages, nextStart := res.Val()
+	return messages, nextStart, nil
 }

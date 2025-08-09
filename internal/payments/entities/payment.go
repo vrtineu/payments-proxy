@@ -1,6 +1,8 @@
 package entities
 
-import "time"
+import (
+	"time"
+)
 
 type GatewayType int
 
@@ -12,6 +14,15 @@ const (
 type Payment struct {
 	CorrelationID string      `json:"correlationId"`
 	Amount        float64     `json:"amount"`
-	RequestedAt   time.Time   `json:"requestedAt"`
+	RequestedAt   string      `json:"requestedAt"`
 	Gateway       GatewayType `json:"-"`
+}
+
+func NewPayment(correlationID string, amount float64, gateway GatewayType) *Payment {
+	return &Payment{
+		CorrelationID: correlationID,
+		Amount:        amount,
+		RequestedAt:   time.Now().UTC().Format(time.RFC3339Nano),
+		Gateway:       gateway,
+	}
 }

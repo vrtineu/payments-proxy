@@ -11,7 +11,8 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	redisClient := redis.NewRedisClient()
 
@@ -31,7 +32,9 @@ func main() {
 	paymentHandlers := payments.NewPaymentHandlers(paymentsQueue)
 
 	worker := processor.NewPaymentWorker(paymentsQueue, healthChecker, defaultGateway, fallbackGateway)
-	worker.Start(ctx)
+	go func() {
+		worker.Start(ctx)
+	}()
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

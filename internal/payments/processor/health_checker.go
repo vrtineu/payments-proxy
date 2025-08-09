@@ -3,7 +3,6 @@ package processor
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -37,54 +36,11 @@ func NewHealthChecker(rdb *redis.Client, defaultGateway *PaymentGateway, fallbac
 	}
 }
 
-func (hc *HealthChecker) StartHealthMonitor(ctx context.Context) {
-	ticker := time.NewTicker(6 * time.Second)
-
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				hc.DoHealthCheck(ctx, hc.defaultGateway)
-				hc.DoHealthCheck(ctx, hc.fallbackGateway)
-			case <-ctx.Done():
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-}
-
-func (hc *HealthChecker) TryAcquireLock(ctx context.Context, paymentGateway *PaymentGateway) bool {
-	key := fmt.Sprintf("health:check:%d:lock", paymentGateway.gatewayType)
-	ok, err := hc.rdb.SetNX(ctx, key, hc.instanceID, 5*time.Second).Result() // Reduced to 5 seconds
-	if err != nil {
-		return false
-	}
-	return ok
-}
-
-func (hc *HealthChecker) DoHealthCheck(ctx context.Context, paymentGateway *PaymentGateway) {
-	if !hc.TryAcquireLock(ctx, paymentGateway) {
-		return
-	}
-
-	health, err := paymentGateway.HealthCheck(ctx)
-	if err != nil {
-		return
-	}
-
-	key := fmt.Sprintf("processor:%d:health", paymentGateway.gatewayType)
-	err = hc.rdb.Set(ctx, key, health, 30*time.Second).Err()
-	if err != nil {
-		return
-	}
-}
-
 func (hc *HealthChecker) GetHealthStatus(ctx context.Context, paymentGateway *PaymentGateway) (*HealthStatus, error) {
 	key := fmt.Sprintf("processor:%d:health", paymentGateway.gatewayType)
 	result := hc.rdb.Get(ctx, key)
 	if result.Err() != nil {
-		return nil, errors.New("health not cached")
+		return &HealthStatus{Failing: true, MinResponseTime: 0}, nil
 	}
 
 	var healthStatus HealthStatus
@@ -92,4 +48,44 @@ func (hc *HealthChecker) GetHealthStatus(ctx context.Context, paymentGateway *Pa
 		return nil, err
 	}
 	return &healthStatus, nil
+}
+
+func (hc *HealthChecker) StartHealthMonitor(ctx context.Context) {
+	hc.checkHealth(ctx)
+	ticker := time.NewTicker(6 * time.Second)
+	go func() {
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				hc.checkHealth(ctx)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+}
+
+func (hc *HealthChecker) checkHealth(ctx context.Context) {
+	hc.doHealthCheck(ctx, hc.defaultGateway)
+	hc.doHealthCheck(ctx, hc.fallbackGateway)
+}
+
+func (hc *HealthChecker) tryAcquireLock(ctx context.Context, paymentGateway *PaymentGateway) bool {
+	key := fmt.Sprintf("health:check:%d:lock", paymentGateway.gatewayType)
+	ok, err := hc.rdb.SetNX(ctx, key, hc.instanceID, 5*time.Second).Result()
+	if err != nil {
+		return false
+	}
+	return ok
+}
+
+func (hc *HealthChecker) doHealthCheck(ctx context.Context, paymentGateway *PaymentGateway) {
+	if !hc.tryAcquireLock(ctx, paymentGateway) {
+		return
+	}
+
+	healthBytes, _ := paymentGateway.HealthCheck(ctx)
+	key := fmt.Sprintf("processor:%d:health", paymentGateway.gatewayType)
+	_ = hc.rdb.Set(ctx, key, healthBytes, 30*time.Second).Err()
 }

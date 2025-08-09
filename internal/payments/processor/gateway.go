@@ -99,7 +99,8 @@ func (pg *PaymentGateway) ProcessPayment(ctx context.Context, payment *entities.
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to process payment: %s", resp.Status)
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to process payment: %s, body: %s", resp.Status, body)
 	}
 
 	return nil
