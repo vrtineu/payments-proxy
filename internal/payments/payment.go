@@ -26,3 +26,14 @@ func NewPayment(correlationID string, amount float64, gateway GatewayType) *Paym
 		Gateway:       gateway,
 	}
 }
+
+func (g GatewayType) String() string {
+	switch g {
+	case Default:
+		return "default"
+	case Fallback:
+		return "fallback"
+	default:
+		return "unknown"
+	}
+}

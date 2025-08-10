@@ -28,9 +28,10 @@ func main() {
 		panic(err)
 	}
 
-	paymentHandlers := payments.NewPaymentHandlers(paymentsQueue)
+	paymentsStorage := payments.NewPaymentsStorage(redisClient.Client)
+	paymentHandlers := payments.NewPaymentHandlers(paymentsQueue, paymentsStorage)
 
-	worker := processor.NewPaymentWorker(paymentsQueue, healthChecker, defaultGateway, fallbackGateway)
+	worker := processor.NewPaymentWorker(paymentsQueue, paymentsStorage, healthChecker, defaultGateway, fallbackGateway)
 	go func() {
 		worker.Start(ctx)
 	}()

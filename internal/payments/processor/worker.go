@@ -13,14 +13,16 @@ import (
 
 type PaymentWorker struct {
 	queue           *payments.PaymentsQueue
+	storage         *payments.PaymentsStorage
 	healthChecker   *HealthChecker
 	defaultGateway  *PaymentGateway
 	fallbackGateway *PaymentGateway
 }
 
-func NewPaymentWorker(queue *payments.PaymentsQueue, healthChecker *HealthChecker, defaultGateway *PaymentGateway, fallbackGateway *PaymentGateway) *PaymentWorker {
+func NewPaymentWorker(queue *payments.PaymentsQueue, storage *payments.PaymentsStorage, healthChecker *HealthChecker, defaultGateway *PaymentGateway, fallbackGateway *PaymentGateway) *PaymentWorker {
 	return &PaymentWorker{
 		queue:           queue,
+		storage:         storage,
 		healthChecker:   healthChecker,
 		defaultGateway:  defaultGateway,
 		fallbackGateway: fallbackGateway,
@@ -138,6 +140,7 @@ func (pw *PaymentWorker) processMessage(ctx context.Context, msg redis.XMessage)
 		return
 	}
 
+	pw.storage.SaveToGatewaySets(ctx, payment)
 	pw.handleMessageCompletion(ctx, msg.ID)
 }
 
