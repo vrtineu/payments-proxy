@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/vrtineu/payments-proxy/internal/infra/redis"
 	"github.com/vrtineu/payments-proxy/internal/payments"
@@ -15,8 +16,9 @@ func main() {
 
 	redisClient := redis.NewRedisClient()
 
-	defaultGateway := processor.NewPaymentGateway("http://localhost:8001", payments.Default)
-	fallbackGateway := processor.NewPaymentGateway("http://localhost:8002", payments.Fallback)
+	defaultGatewayUrl, fallbackGatewayUrl := getGatewayUrls()
+	defaultGateway := processor.NewPaymentGateway(defaultGatewayUrl, payments.Default)
+	fallbackGateway := processor.NewPaymentGateway(fallbackGatewayUrl, payments.Fallback)
 
 	healthChecker := processor.NewHealthChecker(redisClient.Client, defaultGateway, fallbackGateway)
 	healthChecker.StartHealthMonitor(ctx)
@@ -43,4 +45,18 @@ func main() {
 	http.HandleFunc("/payments", paymentHandlers.CreatePaymentHandler)
 	http.HandleFunc("/payments-summary", paymentHandlers.PaymentsSummaryHandler)
 	http.ListenAndServe(":9999", nil)
+}
+
+func getGatewayUrls() (defaultGatewayUrl, fallbackGatewayUrl string) {
+	defaultGatewayUrl = os.Getenv("DEFAULT_GATEWAY_URL")
+	if defaultGatewayUrl == "" {
+		defaultGatewayUrl = "http://localhost:8001"
+	}
+
+	fallbackGatewayUrl = os.Getenv("FALLBACK_GATEWAY_URL")
+	if fallbackGatewayUrl == "" {
+		fallbackGatewayUrl = "http://localhost:8082"
+	}
+
+	return
 }
