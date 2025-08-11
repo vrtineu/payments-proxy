@@ -22,7 +22,7 @@ func NewPayment(correlationID string, amount float64, gateway GatewayType) *Paym
 	return &Payment{
 		CorrelationID: correlationID,
 		Amount:        amount,
-		RequestedAt:   time.Now().UTC().Format(time.RFC3339Nano),
+		RequestedAt:   time.Now().UTC().Format(time.RFC3339),
 		Gateway:       gateway,
 	}
 }

@@ -24,14 +24,10 @@ func NewPaymentsQueue(rdb *redis.Client) *PaymentsQueue {
 }
 
 func (q *PaymentsQueue) SetupPaymentsQueue(ctx context.Context) error {
-	err := q.rdb.Del(ctx, PaymentsStream).Err()
-	if err != nil {
-		return err
-	}
-
-	err = q.rdb.XGroupCreateMkStream(ctx, PaymentsStream, GroupName, "0").Err()
-	if err != nil {
-		return err
+	if err := q.rdb.XGroupCreateMkStream(ctx, PaymentsStream, GroupName, "0").Err(); err != nil {
+		if err.Error() != "BUSYGROUP Consumer Group name already exists" {
+			return err
+		}
 	}
 
 	return nil

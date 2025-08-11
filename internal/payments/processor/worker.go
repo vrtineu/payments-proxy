@@ -140,7 +140,10 @@ func (pw *PaymentWorker) processMessage(ctx context.Context, msg redis.XMessage)
 		return
 	}
 
-	pw.storage.SaveToGatewaySets(ctx, payment)
+	if err := pw.storage.SaveToGatewaySets(ctx, payment); err != nil {
+		return
+	}
+
 	pw.handleMessageCompletion(ctx, msg.ID)
 }
 
