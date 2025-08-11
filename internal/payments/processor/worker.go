@@ -17,6 +17,7 @@ type PaymentWorker struct {
 	healthChecker   *HealthChecker
 	defaultGateway  *PaymentGateway
 	fallbackGateway *PaymentGateway
+	concurrent      int
 }
 
 func NewPaymentWorker(queue *payments.PaymentsQueue, storage *payments.PaymentsStorage, healthChecker *HealthChecker, defaultGateway *PaymentGateway, fallbackGateway *PaymentGateway) *PaymentWorker {
@@ -26,6 +27,7 @@ func NewPaymentWorker(queue *payments.PaymentsQueue, storage *payments.PaymentsS
 		healthChecker:   healthChecker,
 		defaultGateway:  defaultGateway,
 		fallbackGateway: fallbackGateway,
+		concurrent:      16,
 	}
 }
 
@@ -55,8 +57,16 @@ func (pw *PaymentWorker) runDequeueWorker(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			if err := pw.handleNormalMessages(ctx); err != nil {
-				fmt.Printf("Error in dequeue worker: %v\n", err)
+			dequeueCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			messages, err := pw.queue.Dequeue(dequeueCtx, pw.healthChecker.instanceID, int64(pw.concurrent))
+			cancel()
+
+			if err != nil {
+				continue
+			}
+
+			if len(messages) > 0 {
+				pw.handleNormalMessages(ctx, messages)
 			}
 		}
 	}
@@ -84,19 +94,23 @@ func (pw *PaymentWorker) runAutoClaimWorker(ctx context.Context) {
 	}
 }
 
-func (pw *PaymentWorker) handleNormalMessages(ctx context.Context) error {
-	messages, err := pw.queue.Dequeue(ctx, pw.healthChecker.instanceID)
-	if err != nil {
-		return fmt.Errorf("error dequeuing messages: %w", err)
-	}
-	if len(messages) == 0 {
-		return nil
-	}
+func (pw *PaymentWorker) handleNormalMessages(ctx context.Context, messages []redis.XMessage) error {
+	sem := make(chan struct{}, pw.concurrent)
+	var wg sync.WaitGroup
 
 	for _, msg := range messages {
-		pw.processMessage(ctx, msg)
+		wg.Add(1)
+		go func(message redis.XMessage) {
+			sem <- struct{}{}
+			defer func() {
+				<-sem
+				wg.Done()
+			}()
+			pw.processMessage(ctx, message)
+		}(msg)
 	}
 
+	wg.Wait()
 	return nil
 }
 

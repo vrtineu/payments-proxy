@@ -45,12 +45,12 @@ func (q *PaymentsQueue) Enqueue(ctx context.Context, payment Payment) error {
 	return err
 }
 
-func (q *PaymentsQueue) Dequeue(ctx context.Context, instanceID string) ([]redis.XMessage, error) {
+func (q *PaymentsQueue) Dequeue(ctx context.Context, instanceID string, count int64) ([]redis.XMessage, error) {
 	result := q.rdb.XReadGroup(ctx, &redis.XReadGroupArgs{
 		Group:    GroupName,
 		Consumer: instanceID,
 		Streams:  []string{PaymentsStream, ">"},
-		Count:    1,
+		Count:    count,
 		Block:    0,
 	})
 

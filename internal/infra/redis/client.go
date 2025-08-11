@@ -2,6 +2,7 @@ package redis
 
 import (
 	"os"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -18,8 +19,9 @@ func NewRedisClient() *RedisClient {
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         addr,
-		PoolSize:     20,
-		MinIdleConns: 5,
+		PoolSize:     128,
+		MinIdleConns: 16,
+		PoolTimeout:  1 * time.Second,
 	})
 
 	return &RedisClient{
