@@ -4,7 +4,7 @@ RINHA_TOKEN=123
 
 # App commands
 
-.PHONY: start build-prd
+.PHONY: start build-prd compose compose-down
 
 start:
 	@echo "Starting payment processor..."
@@ -13,6 +13,14 @@ start:
 build-prd:
 	@echo "Building payment processor for production..."
 	@CGO_ENABLED=0 GOOS=linux go build -o server cmd/server/server.go
+
+compose:
+	@echo "Starting payment processor with Docker Compose..."
+	@docker compose up -d --build
+
+compose-down:
+	@echo "Stopping payment processor with Docker Compose..."
+	@docker compose down
 
 # Gateways commands
 
