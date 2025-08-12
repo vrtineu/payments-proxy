@@ -19,8 +19,8 @@ func NewRedisClient() *RedisClient {
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:         addr,
-		PoolSize:     128,
-		MinIdleConns: 16,
+		PoolSize:     32,
+		MinIdleConns: 8,
 		PoolTimeout:  1 * time.Second,
 	})
 

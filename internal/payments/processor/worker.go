@@ -28,7 +28,7 @@ func NewPaymentWorker(queue *payments.PaymentsQueue, storage *payments.PaymentsS
 		healthChecker:   healthChecker,
 		defaultGateway:  defaultGateway,
 		fallbackGateway: fallbackGateway,
-		concurrent:      16,
+		concurrent:      32,
 	}
 }
 
