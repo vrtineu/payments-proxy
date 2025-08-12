@@ -1,0 +1,8 @@
+.dockerignore
+.gitignore
+.git/
+.github/
+misc/
+docker-compose.yml
+haproxy.cfg
+README.md
