@@ -205,7 +205,9 @@ func (pw *PaymentWorker) getPaymentGateway(ctx context.Context) *PaymentGateway 
 
 	if !defaultStatus.Failing {
 		return pw.defaultGateway
-	} else if !fallbackStatus.Failing {
+	}
+
+	if !fallbackStatus.Failing {
 		return pw.fallbackGateway
 	}
 

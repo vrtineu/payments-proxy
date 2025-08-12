@@ -20,8 +20,12 @@ func main() {
 	defaultGateway := processor.NewPaymentGateway(defaultGatewayUrl, payments.Default)
 	fallbackGateway := processor.NewPaymentGateway(fallbackGatewayUrl, payments.Fallback)
 
-	healthChecker := processor.NewHealthChecker(redisClient.Client, defaultGateway, fallbackGateway)
-	healthChecker.StartHealthMonitor(ctx)
+	healthChecker := processor.NewHealthChecker(
+		redisClient.Client,
+		defaultGateway,
+		fallbackGateway,
+	)
+	go healthChecker.StartHealthMonitor(ctx)
 
 	paymentsQueue := payments.NewPaymentsQueue(redisClient.Client)
 
@@ -33,10 +37,14 @@ func main() {
 	paymentsStorage := payments.NewPaymentsStorage(redisClient.Client)
 	paymentHandlers := payments.NewPaymentHandlers(paymentsQueue, paymentsStorage)
 
-	worker := processor.NewPaymentWorker(paymentsQueue, paymentsStorage, healthChecker, defaultGateway, fallbackGateway)
-	go func() {
-		worker.Start(ctx)
-	}()
+	worker := processor.NewPaymentWorker(
+		paymentsQueue,
+		paymentsStorage,
+		healthChecker,
+		defaultGateway,
+		fallbackGateway,
+	)
+	go worker.Start(ctx)
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
