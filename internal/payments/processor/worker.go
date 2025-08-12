@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -85,7 +86,7 @@ func (pw *PaymentWorker) runAutoClaimWorker(ctx context.Context) {
 		case <-ticker.C:
 			nextStart, err := pw.handleAutoClaimMessages(ctx, start)
 			if err != nil {
-				fmt.Printf("Error in auto claim worker: %v\n", err)
+				log.Printf("Error in auto claim worker: %v\n", err)
 				start = "0-0"
 				continue
 			}
@@ -182,12 +183,12 @@ func (pw *PaymentWorker) parseMessageData(msg redis.XMessage) (string, float64, 
 
 func (pw *PaymentWorker) handleMessageCompletion(ctx context.Context, messageID string) {
 	if err := pw.queue.AckMessage(ctx, messageID); err != nil {
-		fmt.Printf("Error acknowledging message %s: %v\n", messageID, err)
+		log.Printf("Error acknowledging message %s: %v\n", messageID, err)
 		return
 	}
 
 	if err := pw.queue.DeleteMessage(ctx, messageID); err != nil {
-		fmt.Printf("Error deleting message %s: %v\n", messageID, err)
+		log.Printf("Error deleting message %s: %v\n", messageID, err)
 	}
 }
 

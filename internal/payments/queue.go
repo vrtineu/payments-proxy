@@ -2,7 +2,7 @@ package payments
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -55,7 +55,7 @@ func (q *PaymentsQueue) Dequeue(ctx context.Context, instanceID string, count in
 	})
 
 	if result.Err() != nil {
-		fmt.Printf("Error reading from stream %s: %v\n", PaymentsStream, result.Err())
+		log.Printf("Error reading from stream %s: %v\n", PaymentsStream, result.Err())
 		return nil, result.Err()
 	}
 

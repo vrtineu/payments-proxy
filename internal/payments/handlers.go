@@ -1,7 +1,9 @@
 package payments
 
 import (
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,7 +34,14 @@ func (h *PaymentHandlers) CreatePaymentHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	h.queue.Enqueue(r.Context(), payment)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := h.queue.Enqueue(ctx, payment); err != nil {
+			log.Printf("Error enqueuing payment: %v\n", err)
+		}
+	}()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
@@ -54,10 +63,8 @@ func (h *PaymentHandlers) PaymentsSummaryHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	fromStr := r.URL.Query().Get("from")
-	toStr := r.URL.Query().Get("to")
-	fromTime, _ := time.Parse(time.RFC3339, fromStr)
-	toTime, _ := time.Parse(time.RFC3339, toStr)
+	fromTime, _ := time.Parse(time.RFC3339, r.URL.Query().Get("from"))
+	toTime, _ := time.Parse(time.RFC3339, r.URL.Query().Get("to"))
 	fromScore := fromTime.UnixNano()
 	toScore := toTime.UnixNano()
 
