@@ -32,11 +32,16 @@ func NewPaymentGateway(url string, gatewayType payments.GatewayType) *PaymentGat
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 			Transport: &http.Transport{
-				MaxIdleConns:        256,
-				MaxIdleConnsPerHost: 128,
-				MaxConnsPerHost:     128,
-				IdleConnTimeout:     30 * time.Second,
-				DisableCompression:  true,
+				MaxIdleConns:          100,
+				MaxIdleConnsPerHost:   10,
+				MaxConnsPerHost:       50,
+				IdleConnTimeout:       90 * time.Second,
+				DisableCompression:    true,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ResponseHeaderTimeout: 5 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				ReadBufferSize:        4096,
+				WriteBufferSize:       4096,
 			},
 		},
 	}

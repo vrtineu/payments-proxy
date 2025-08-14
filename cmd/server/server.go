@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
+	"time"
 
 	"github.com/vrtineu/payments-proxy/internal/infra/redis"
 	"github.com/vrtineu/payments-proxy/internal/payments"
@@ -13,6 +15,12 @@ import (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if os.Getenv("ENABLE_PPROF") == "true" {
+		go func() {
+			http.ListenAndServe(":6060", nil)
+		}()
+	}
 
 	redisClient := redis.NewRedisClient()
 
@@ -52,7 +60,16 @@ func main() {
 	})
 	http.HandleFunc("/payments", paymentHandlers.CreatePaymentHandler)
 	http.HandleFunc("/payments-summary", paymentHandlers.PaymentsSummaryHandler)
-	http.ListenAndServe(":9999", nil)
+
+	server := &http.Server{
+		Addr:           ":9999",
+		ReadTimeout:    15 * time.Second,
+		WriteTimeout:   15 * time.Second,
+		IdleTimeout:    60 * time.Second,
+		MaxHeaderBytes: 1 << 16,
+	}
+
+	server.ListenAndServe()
 }
 
 func getGatewayUrls() (defaultGatewayUrl, fallbackGatewayUrl string) {

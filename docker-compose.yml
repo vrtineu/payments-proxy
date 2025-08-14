@@ -2,10 +2,13 @@ services:
   app1: &app
     build:
       context: .
+    ports:
+      - 6060:6060
     environment:
       - REDIS_ADDR=redis:6379
       - DEFAULT_GATEWAY_URL=http://payment-processor-default:8080
       - FALLBACK_GATEWAY_URL=http://payment-processor-fallback:8080
+      - ENABLE_PPROF=true
     networks:
       - backend
       - payment-processor
@@ -21,10 +24,12 @@ services:
       resources:
         limits:
           cpus: "0.60"
-          memory: "150MB"
+          memory: "125MB"
 
   app2:
     <<: *app
+    ports:
+      - 6061:6060
 
   redis:
     image: redis:7.2-alpine
@@ -67,8 +72,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: "55MB"
+          cpus: "0.15"
+          memory: "50MB"
     volumes:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
 
