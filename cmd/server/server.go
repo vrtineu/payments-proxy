@@ -5,7 +5,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"time"
+	"runtime"
 
 	"github.com/vrtineu/payments-proxy/internal/infra/redis"
 	"github.com/vrtineu/payments-proxy/internal/payments"
@@ -52,7 +52,18 @@ func main() {
 		defaultGateway,
 		fallbackGateway,
 	)
-	go worker.Start(ctx)
+
+	numWorkers := runtime.NumCPU()
+	if numWorkers < 2 {
+		numWorkers = 2
+	}
+	if numWorkers > 8 {
+		numWorkers = 8
+	}
+
+	for i := 0; i < numWorkers; i++ {
+		go worker.Start(ctx)
+	}
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -61,15 +72,7 @@ func main() {
 	http.HandleFunc("/payments", paymentHandlers.CreatePaymentHandler)
 	http.HandleFunc("/payments-summary", paymentHandlers.PaymentsSummaryHandler)
 
-	server := &http.Server{
-		Addr:           ":9999",
-		ReadTimeout:    15 * time.Second,
-		WriteTimeout:   15 * time.Second,
-		IdleTimeout:    60 * time.Second,
-		MaxHeaderBytes: 1 << 16,
-	}
-
-	server.ListenAndServe()
+	http.ListenAndServe(":9999", nil)
 }
 
 func getGatewayUrls() (defaultGatewayUrl, fallbackGatewayUrl string) {

@@ -48,3 +48,14 @@ purge-gateways:
 		-H "X-Rinha-Token: $(RINHA_TOKEN)"); \
 	echo "Default response: $$default_response"; \
 	echo "Fallback response: $$fallback_response"
+
+# K6 testes
+
+.PHONY: run-k6-tests
+
+run-k6-tests:
+	@echo "Running K6 tests..."
+	@make purge-gateways
+	@make compose-down
+	@make compose
+	@cd misc/rinha-test && k6 run rinha.js && cd -
