@@ -197,10 +197,10 @@ func (pw *PaymentWorker) getPaymentGateway(ctx context.Context) *PaymentGateway 
 	fallbackStatus, _ := pw.healthChecker.GetHealthStatus(ctx, pw.fallbackGateway)
 
 	if !defaultStatus.Failing && !fallbackStatus.Failing {
-		if defaultStatus.MinResponseTime < fallbackStatus.MinResponseTime {
-			return pw.defaultGateway
+		if defaultStatus.MinResponseTime > 2000 {
+			return pw.fallbackGateway
 		}
-		return pw.fallbackGateway
+		return pw.defaultGateway
 	}
 
 	if !defaultStatus.Failing {

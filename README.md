@@ -179,7 +179,7 @@ make run-k6-tests       # Executa suite completa de testes
 
 1. **Verifica saúde** de ambos os gateways
 2. **Prioriza gateway disponível** (Default primeiro)
-3. **Escolhe por performance** quando ambos disponíveis (menor `minResponseTime`)
+3. **Escolhe por performance** quando ambos disponíveis (se `default.minResponseTime` > 2000ms usa Fallback)
 4. **Fallback automático** em caso de falha
 
 ### Processamento Assíncrono
